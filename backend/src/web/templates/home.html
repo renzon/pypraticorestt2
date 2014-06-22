@@ -1,16 +1,65 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <link rel="shortcut icon" href="/static/img/favicon.ico" />
-    <title>Zenwarch</title>
+    <script type="application/javascript"
+            src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.18/angular.min.js"></script>
+    <script type="application/javascript">
+
+        var app = angular.module('app', []);
+
+        app.config(function ($interpolateProvider) {
+            $interpolateProvider.startSymbol('{_');
+            $interpolateProvider.endSymbol('_}');
+        });
+
+        function Ctrl($scope,$http){
+            $scope.descricao = 'Alguma coisa';
+            $scope.valor = '1.11';
+            $scope.data = '02/09/2014';
+            $scope.listaDeGastos=[];
+
+            $http.get('/financas').success(function(listaDoServidor){
+                $scope.listaDeGastos=listaDoServidor;
+            });
+
+            $scope.salvarGasto=function(descricao,valor,data){
+                var gasto={'descricao':descricao,'valor':valor,'data_informada':data};
+                $http.post('/financas/salvar',gasto).success(function(dadoDoServidor){
+                    $scope.listaDeGastos.push(dadoDoServidor);
+                });
+
+            }
+
+            $scope.apagarGasto=function(gastoId,index){
+                $http.post('/financas/apagar',{'gasto_id':gastoId}).success(function(){
+                       $scope.listaDeGastos.splice(index,1);
+                });
+            }
+        }
+    </script>
+    <title>Finanças</title>
 </head>
-<body>
-{% block body %}
-    <h1>Hello World</h1>
-    <form action="{{ form_url }}">
-        Type your name <input type="text" name="name"/>
-        <button type="submit">Send</button>
-    </form>
-{% endblock %}
+<body ng-app="app" ng-controller="Ctrl">
+<h1>Relação de Finanças </h1>
+
+<div>
+    Descrição: <input type="text" ng-model="descricao"/>
+</div>
+<div>
+    Valor: <input type="text" ng-model="valor"/>
+</div>
+
+<div>
+    Data: <input type="text" ng-model="data"/>
+</div>
+<button ng-click="salvarGasto(descricao,valor,data)">Salvar</button>
+
+<ol>
+    <li ng-repeat="gasto in listaDeGastos">
+        {_ gasto.data_informada _} - R$ {_ gasto.valor _} - {_ gasto.descricao _}
+        <button  ng-click="apagarGasto(gasto.id,$index)">>Apagar</button>
+    </li>
+</ol>
+
 </body>
 </html>
